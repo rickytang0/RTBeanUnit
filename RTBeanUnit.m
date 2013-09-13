@@ -61,6 +61,7 @@
 }
 
 
+
 -(void)setBeanWith:(NSObject *)_bean andJSONData:(NSData *)_data
 {
     NSError *err = nil;
@@ -106,6 +107,48 @@
 }
 
 
+/////////////
+-(id)setBeanWithClass:(Class)_class jsonString:(NSString *)_jsonString
+{
+    NSData *data = [_jsonString dataUsingEncoding:NSUTF8StringEncoding];
+    return [self setBeanWithClass:_class jsonData:data];
+}
+
+-(id)setBeanWithClass:(Class)_class jsonData:(NSData *)_data
+{
+    NSError *error = nil;
+    id temp = [NSJSONSerialization JSONObjectWithData:_data options:NSJSONReadingMutableContainers error:&error];
+    
+    if ([temp isKindOfClass:[NSArray class]]) {
+        return [self setBeanWithClass:_class array:temp];
+    }
+    else{
+        return [self setBeanWithObject:[_class new] fromDictionary:temp];
+    }
+}
+
+
+-(NSArray *)setBeanWithClass:(Class)_class array:(NSArray *)_array
+{
+    NSMutableArray *temp = [[NSMutableArray alloc] initWithCapacity:_array.count];
+    [temp enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop){
+        [temp addObject:[self setBeanWithObject:[_class new] fromDictionary:obj]];
+    }];
+    return temp;
+}
+
+
+-(id)setBeanWithObject:(NSObject *)_object fromDictionary:(NSDictionary *)dic
+{
+    __block NSObject *temp;
+    [dic enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop){
+        //if can not find model value and the obj is array then goto parse array
+        temp = [self setBeanWith:_object andValue:obj andKey:key];
+    }];
+    return temp;
+}
+
+
 -(kClassType)getClassTypeWithObject:(id)object
 {
     if (!object || (NSNull *)object == [NSNull null]) {
@@ -136,7 +179,7 @@
 }
 
 
--(BOOL)setBeanWith:(NSObject *)_bean andValue:(NSObject *)_value andKey:(NSString *)_key
+-(id)setBeanWith:(NSObject *)_bean andValue:(NSObject *)_value andKey:(NSString *)_key
 {
     SEL seletor;
     seletor = [self getSeletorWith:_key];
@@ -144,7 +187,7 @@
     
     //无此方法就不执行
     if (![_bean respondsToSelector:seletor]) {
-        return NO;
+        return nil;
     }
     
     //判断是否为空值，空值返回
@@ -202,7 +245,7 @@
         default:
             break;
     }
-    return YES;
+    return _bean;
 }
 
 -(NSMutableDictionary *)convertToDictionaryFromBean:(NSObject *)_bean

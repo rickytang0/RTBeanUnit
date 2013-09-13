@@ -65,8 +65,18 @@ typedef NSNumber* (^BeanUnitNumberBlock)(id data,id key);
 
 -(void)setBeanWith:(NSObject *)_bean andArray:(NSArray *)_array;
 
+//////////
+-(id)setBeanWithClass:(Class)_class jsonString:(NSString *)_jsonString;
+
+-(id)setBeanWithClass:(Class)_class jsonData:(NSData *)_data;
+
+-(NSArray *)setBeanWithClass:(Class)_class array:(NSArray *)_array;
+
+-(id)setBeanWithObject:(NSObject *)_object fromDictionary:(NSDictionary *)dic;
+
 //
--(BOOL)setBeanWith:(NSObject *)_bean andValue:(NSObject *)_value andKey:(NSString *)_key;
+-(id)setBeanWith:(NSObject *)_bean andValue:(NSObject *)_value andKey:(NSString *)_key;
+
 
 
 /*
