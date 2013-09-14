@@ -53,6 +53,14 @@
         
     }];
     
+    NSArray *array = [beanUnit setBeanWithClass:[RTTestModel class] jsonData:data];
+    NSLog(@"%@",array);
+    for (RTTestModel *model in array) {
+        NSLog(@"%@",model.tableAreaName);
+        NSLog(@"%@",model.tableAreaID);
+        NSLog(@"%@",model.date);
+    }
+    
 }
 
 - (void)didReceiveMemoryWarning

@@ -119,6 +119,8 @@
     NSError *error = nil;
     id temp = [NSJSONSerialization JSONObjectWithData:_data options:NSJSONReadingMutableContainers error:&error];
     
+    NSAssert(!error, @"JSONSerialization can not parse");
+
     if ([temp isKindOfClass:[NSArray class]]) {
         return [self setBeanWithClass:_class array:temp];
     }
@@ -131,8 +133,16 @@
 -(NSArray *)setBeanWithClass:(Class)_class array:(NSArray *)_array
 {
     NSMutableArray *temp = [[NSMutableArray alloc] initWithCapacity:_array.count];
-    [temp enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop){
-        [temp addObject:[self setBeanWithObject:[_class new] fromDictionary:obj]];
+    [_array enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop){
+        if ([obj isKindOfClass:[NSDictionary class]]) {
+            id tempObject = [self setBeanWithObject:[_class new] fromDictionary:obj];
+            if (tempObject) {
+                [temp addObject:tempObject];
+            }
+        }
+        else if([obj isKindOfClass:[NSArray class]]){
+            [temp arrayByAddingObjectsFromArray:[self setBeanWithClass:_class array:obj]];
+        }
     }];
     return temp;
 }
@@ -143,7 +153,12 @@
     __block NSObject *temp;
     [dic enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop){
         //if can not find model value and the obj is array then goto parse array
-        temp = [self setBeanWith:_object andValue:obj andKey:key];
+        if ([obj isKindOfClass:[NSArray class]]) {
+            temp = [self setBeanWithClass:[_object class] array:obj];
+        }
+        else{
+            temp = [self setBeanWith:_object andValue:obj andKey:key];
+        }
     }];
     return temp;
 }
@@ -217,14 +232,14 @@
     kClassType type = [self getClassTypeWithObject:_value];
     switch (type) {
         case kClassTypeNull:
-            return NO;
+            return nil;
             break;
         case kClassTypeString:
         {
             NSDate *date = (NSDate *)beanUnitDateConvertBlock(_value,_key);
             if (date) {
                 [_bean setValue:date forKey:_key];
-                return YES;
+                
             }
             _value = (beanUnitStringChangeBlock) ? beanUnitStringChangeBlock(_value,_key) : _value;
                    [_bean setValue:_value forKey:_key];
@@ -241,7 +256,7 @@
             [_bean setValue:_value forKey:_key];
             break;
         case kClassTypeNone:
-            return NO;
+            return nil;
         default:
             break;
     }
